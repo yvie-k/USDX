@@ -356,6 +356,7 @@ var
   Iter: IFileIterator;
   FileInfo: TFileInfo;
   FileName: IPath;
+  FileCount: Integer;
 begin
   if Recursive then
     DirList := CollectDirectories(Dir, true, Self)
@@ -365,6 +366,8 @@ begin
     DirList[0] := Dir;
   end;
 
+  FileCount := 0;
+  SetLength(Files, 128);
   for DirIndex := 0 to High(DirList) do
   begin
     Iter := FileSystem.FileFind(DirList[DirIndex].Append('*.txt'), 0);
@@ -375,12 +378,17 @@ begin
       if ((FileInfo.Attr and faDirectory) = 0) and Ext.Equals(FileName.GetExtension(), true) then
       begin
         Log.LogDebug('Found file ' + DirList[DirIndex].Append(FileName).ToWide, 'TSongs.FindFilesByExtension');
-        SetLength(Files, Length(Files) + 1);
-        Files[High(Files)] := DirList[DirIndex].Append(FileName);
+        if (Length(Files) <= FileCount) then
+        begin
+          SetLength(Files, Length(Files)*2);
+        end;
+        Files[FileCount] := DirList[DirIndex].Append(FileName);
+        FileCount := FileCount + 1;
         PumpLoadingEvents;
       end;
     end;
   end;
+  SetLength(Files, FileCount);
 end;
 
 function TSongs.CollectSongFiles: TPathDynArray;
